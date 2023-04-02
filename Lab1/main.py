@@ -1,5 +1,7 @@
-from domain.directed_graph_no_cost import *
+from domain.directed_graph import *
 from ui.ui import UI
+
+
 
 ui = UI()
 

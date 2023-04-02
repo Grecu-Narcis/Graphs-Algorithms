@@ -21,6 +21,10 @@ class DirectedGraph:
     def dict_out(self):
         return self.__dict_out
 
+    @property
+    def costs(self):
+        return self.__costs
+
 
     def is_vertex(self, vertex_to_check: int):
         if vertex_to_check not in self.__dict_in:
@@ -169,7 +173,7 @@ class DirectedGraph:
 
         for vertex in self.get_set_of_vertices():
             for edge in self.get_in_bound_edges(vertex):
-                copy_graph.add_edge(edge)
+                copy_graph.add_edge(edge, self.costs[edge])
 
         return copy_graph
 
@@ -186,9 +190,6 @@ def read_graph_from_file_1(filename: str):
 
         graph.add_edge((x, y), cost)
 
-    # print(graph.dict_in)
-    # print(graph.dict_out)
-
     file.close()
 
     return graph
@@ -199,13 +200,22 @@ def read_graph_from_file_2(filename: str):
 
     graph = DirectedGraph()
 
-    for vertex in file.readline().strip().split():
-        graph.add_vertex(int(vertex))
-
     for line in file.readlines():
-        x, y, cost = map(int, line.strip().split())
+        split_line = line.strip().split()
 
-        graph.add_edge((x, y), cost)
+        if len(split_line) == 1:
+            graph.add_vertex(int(split_line[0]))
+
+        else:
+            x, y, cost = map(int, line.strip().split())
+
+            if not graph.is_vertex(x):
+                graph.add_vertex(x)
+
+            if not graph.is_vertex(y):
+                graph.add_vertex(y)
+
+            graph.add_edge((x, y), cost)
 
     return graph
 
@@ -213,19 +223,30 @@ def read_graph_from_file_2(filename: str):
 def write_graph_to_file(filename: str, graph: DirectedGraph):
     file = open(filename, 'wt')
 
-    nodes_as_string = [str(x) for x in graph.get_set_of_vertices()]
+    # nodes_as_string = [str(x) for x in graph.get_set_of_vertices()]
+    #
+    # file.write(' '.join(nodes_as_string))
+    #
+    # file.write('\n')
+    #
+    # for edge, cost in graph.get_all_edges():
+    #     file.write(f'{edge[0]} {edge[1]} {cost}\n')
 
-    file.write(' '.join(nodes_as_string))
+    for node in graph.get_set_of_vertices():
+        if len(graph.dict_in[node]) == 0 and len(graph.dict_out[node]) == 0:
+            file.write(str(node) + '\n')
 
-    file.write('\n')
-
-    for edge, cost in graph.get_all_edges():
-        file.write(f'{edge[0]} {edge[1]} {cost}\n')
+        else:
+            for successor in graph.dict_out[node]:
+                file.write(f'{node} {successor} {graph.costs[(node, successor)]}\n')
 
     file.close()
 
 
 def generate_random_graph(number_of_vertices: int, number_of_edges: int):
+    if number_of_vertices * number_of_vertices < number_of_edges:
+        raise ValueError(f"With {number_of_vertices} vertices you can have at most {number_of_vertices ** 2} edges!")
+
     graph = DirectedGraph(number_of_vertices)
 
     while number_of_edges != 0:

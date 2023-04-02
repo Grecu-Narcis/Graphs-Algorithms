@@ -1,4 +1,4 @@
-from domain.directed_graph_no_cost import *
+from domain.directed_graph import *
 
 
 class UI:
@@ -7,7 +7,7 @@ class UI:
 
     @staticmethod
     def print_menu():
-        print('\n')
+        print('')
         print('Enter 1 to get the number of vertices.\n'
               'Enter 2 to print the set of vertices.\n'
               'Enter 3 to check if an edge exists.\n'
@@ -229,7 +229,11 @@ class UI:
                     print('Number of vertices and edges must be integers.')
                     continue
 
-                graph = generate_random_graph(number_of_vertices, number_of_edges)
+                try:
+                    graph = generate_random_graph(number_of_vertices, number_of_edges)
+                except ValueError as ve:
+                    print(str(ve))
+                    continue
 
             elif option == '15':
                 break
