@@ -11,11 +11,9 @@ class DirectedGraph:
             self.__dict_in[i] = []
             self.__dict_out[i] = []
 
-
     @property
     def dict_in(self):
         return self.__dict_in
-
 
     @property
     def dict_out(self):
@@ -25,13 +23,11 @@ class DirectedGraph:
     def costs(self):
         return self.__costs
 
-
     def is_vertex(self, vertex_to_check: int):
         if vertex_to_check not in self.__dict_in:
             return False
 
         return True
-
 
     def add_vertex(self, vertex_to_add: int):
         if self.is_vertex(vertex_to_add):
@@ -40,24 +36,27 @@ class DirectedGraph:
         self.__dict_in[vertex_to_add] = []
         self.__dict_out[vertex_to_add] = []
 
-
     def remove_vertex(self, vertex_to_remove: int):
         if not self.is_vertex(vertex_to_remove):
             raise ValueError('Vertex does not exist!')
 
-        in_edges = self.get_in_bound_edges(vertex_to_remove)
-        out_edges = self.get_out_bound_edges(vertex_to_remove)
-
-        for edge in in_edges:
-            del self.__costs[edge]
-
-        for edge in out_edges:
-            del self.__costs[edge]
+        # in_edges = self.get_in_bound_edges(vertex_to_remove)
+        # out_edges = self.get_out_bound_edges(vertex_to_remove)
+        #
+        # for edge in in_edges:
+        #     del self.__costs[edge]
+        #
+        # for edge in out_edges:
+        #     del self.__costs[edge]
 
         for vertex in self.__dict_out[vertex_to_remove]:
+            del self.__costs[(vertex_to_remove, vertex)]
+
             self.__dict_in[vertex].remove(vertex_to_remove)
 
         for vertex in self.__dict_in[vertex_to_remove]:
+            del self.__costs[(vertex, vertex_to_remove)]
+
             self.__dict_out[vertex].remove(vertex_to_remove)
 
         del self.__dict_in[vertex_to_remove]
@@ -80,7 +79,6 @@ class DirectedGraph:
 
         return True
 
-
     def add_edge(self, edge_to_add: tuple, cost: int):
         start_point = edge_to_add[0]
         end_point = edge_to_add[1]
@@ -95,7 +93,6 @@ class DirectedGraph:
         self.__dict_in[end_point].append(start_point)
         self.__costs[edge_to_add] = cost
 
-
     def remove_edge(self, edge_to_remove: tuple):
         if not self.is_edge(edge_to_remove):
             raise ValueError('Edge does not exist!')
@@ -108,14 +105,11 @@ class DirectedGraph:
         self.__dict_out[x].remove(y)
         del self.__costs[edge_to_remove]
 
-
     def get_number_of_vertices(self):
         return len(self.__dict_in)
 
-
     def get_set_of_vertices(self):
         return list(self.__dict_in.keys())
-
 
     def get_in_degree(self, vertex: int):
         if not self.is_vertex(vertex):
@@ -123,13 +117,11 @@ class DirectedGraph:
 
         return len(self.__dict_in[vertex])
 
-
     def get_out_degree(self, vertex: int):
         if not self.is_vertex(vertex):
             raise ValueError('Vertex not in graph!')
 
         return len(self.__dict_out[vertex])
-
 
     def get_in_bound_edges(self, vertex: int):
         if not self.is_vertex(vertex):
@@ -142,7 +134,6 @@ class DirectedGraph:
 
         return edges
 
-
     def get_out_bound_edges(self, vertex: int):
         if not self.is_vertex(vertex):
             raise ValueError('Vertex not in graph.')
@@ -154,7 +145,6 @@ class DirectedGraph:
 
         return edges
 
-
     def get_all_edges(self):
         edges = []
 
@@ -163,7 +153,6 @@ class DirectedGraph:
                 edges.append((edge, self.__costs[edge]))
 
         return edges
-
 
     def make_copy(self):
         copy_graph = DirectedGraph()
@@ -222,15 +211,6 @@ def read_graph_from_file_2(filename: str):
 
 def write_graph_to_file(filename: str, graph: DirectedGraph):
     file = open(filename, 'wt')
-
-    # nodes_as_string = [str(x) for x in graph.get_set_of_vertices()]
-    #
-    # file.write(' '.join(nodes_as_string))
-    #
-    # file.write('\n')
-    #
-    # for edge, cost in graph.get_all_edges():
-    #     file.write(f'{edge[0]} {edge[1]} {cost}\n')
 
     for node in graph.get_set_of_vertices():
         if len(graph.dict_in[node]) == 0 and len(graph.dict_out[node]) == 0:
