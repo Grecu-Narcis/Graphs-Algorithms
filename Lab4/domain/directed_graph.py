@@ -8,13 +8,45 @@ class DirectedGraph:
         self.__dict_out = {}
         self.__costs = {}
 
+        # members for activities
+        self.__duration = {}
+        self.__earliest_start_time = {}
+        self.__earliest_end_time = {}
+        self.__latest_start_time = {}
+        self.__latest_end_time = {}
+
         for i in range(number_of_vertices):
             self.__dict_in[i] = []
             self.__dict_out[i] = []
+            self.__duration[i] = 0
+            self.__earliest_start_time[i] = 0
+            self.__earliest_end_time[i] = 0
+            self.__latest_start_time[i] = infinity
+            self.__latest_end_time[i] = infinity
 
         self.__w = [[0 for i in range(number_of_vertices)] for j in range(number_of_vertices)]
         self.__d = [[0 for i in range(number_of_vertices)] for j in range(number_of_vertices)]
         self.__prev = [[-1 for i in range(number_of_vertices)] for j in range(number_of_vertices)]
+
+    @property
+    def duration(self):
+        return self.__duration
+
+    @property
+    def earliest_start_time(self):
+        return self.__earliest_start_time
+
+    @property
+    def earliest_end_time(self):
+        return self.__earliest_end_time
+
+    @property
+    def latest_start_time(self):
+        return self.__latest_start_time
+
+    @property
+    def latest_end_time(self):
+        return self.__latest_end_time
 
     def __initialize_matrices(self):
         number_of_vertices = self.get_number_of_vertices()
@@ -281,6 +313,41 @@ class DirectedGraph:
         return copy_graph
 
 
+    def compute_activities_times(self):
+        sorted_vertices = topological_sort_graph(self)
+
+        if sorted_vertices is None:
+            raise ValueError("Graph is not a DAG!")
+
+        number_of_activities = self.get_number_of_vertices() - 2
+
+        for i in range(1, len(sorted_vertices)):
+            current_vertex = sorted_vertices[i]
+            for vertex in self.dict_in[current_vertex]:
+                self.earliest_start_time[current_vertex] = max(self.earliest_start_time[current_vertex],
+                                                               self.earliest_end_time[vertex])
+
+            self.earliest_end_time[current_vertex] = self.earliest_start_time[current_vertex] + \
+                                                     self.duration[current_vertex]
+
+        last_activity = sorted_vertices[number_of_activities + 1]
+
+        self.latest_end_time[last_activity] = self.earliest_end_time[last_activity]
+        self.latest_start_time[last_activity] = self.latest_end_time[last_activity] - self.duration[last_activity]
+
+        for i in range(number_of_activities, -1, -1):
+            current_vertex = sorted_vertices[i]
+
+            for out_vertex in self.dict_out[current_vertex]:
+                self.latest_end_time[current_vertex] = min(self.latest_end_time[current_vertex],
+                                                           self.latest_start_time[out_vertex])
+
+            self.latest_start_time[current_vertex] = self.latest_end_time[current_vertex] - self.duration[current_vertex]
+
+        # for vertex in range(1, number_of_activities + 2):
+        #     print(f'activity: {vertex}, earliest time: {self.earliest_start_time[vertex]}, latest time: {self.latest_start_time[vertex]}')
+
+
 def read_graph_from_file_1(filename: str):
     file = open(filename, 'rt')
 
@@ -295,7 +362,7 @@ def read_graph_from_file_1(filename: str):
 
     file.close()
 
-    graph.compute_costs_of_paths()
+    # graph.compute_costs_of_paths()
 
     return graph
 
@@ -341,6 +408,11 @@ def write_graph_to_file(filename: str, graph: DirectedGraph):
     file.close()
 
 
+def write_graph_to_screen(graph: DirectedGraph):
+    for node in graph.get_set_of_vertices():
+        print(f'Node: {node} -> {graph.dict_out[node]}')
+
+
 def generate_random_graph(number_of_vertices: int, number_of_edges: int):
     if number_of_vertices * number_of_vertices < number_of_edges:
         raise ValueError(f"With {number_of_vertices} vertices you can have at most {number_of_vertices ** 2} edges!")
@@ -361,3 +433,66 @@ def generate_random_graph(number_of_vertices: int, number_of_edges: int):
     graph.compute_costs_of_paths()
 
     return graph
+
+
+def read_activities(filename: str):
+    input_file = open(filename, "r")
+
+    number_of_activities = int(input_file.readline().strip())
+    activities_graph = DirectedGraph(number_of_activities + 2)
+
+    for i in range(number_of_activities):
+        line = input_file.readline().strip()
+
+        if line == "":
+            continue
+
+        current_activity = list(map(lambda x: int(x.strip()), line.split()))
+        # current_activity[0] - activity index
+        # current_activity[1] - activity duration
+        # current_activity[2:] - pre-required activities
+
+        activity_index = current_activity[0]
+        duration = current_activity[1]
+
+        activities_graph.duration[activity_index] = duration
+
+        for in_vertex in current_activity[2:]:
+            activities_graph.add_edge((in_vertex, activity_index), 0)
+
+    for activity in range(1, number_of_activities + 1):
+        if activities_graph.get_in_degree(activity) == 0:
+            activities_graph.add_edge((0, activity), 0)
+
+        if activities_graph.get_out_degree(activity) == 0:
+            activities_graph.add_edge((activity, number_of_activities + 1), 0)
+
+    return activities_graph
+
+
+def topological_sort_graph(graph_to_sort: DirectedGraph):
+    sorted_vertices = []
+    vertices_queue = []
+
+    degree = {}
+
+    for vertex in graph_to_sort.get_set_of_vertices():
+        degree[vertex] = graph_to_sort.get_in_degree(vertex)
+
+        if graph_to_sort.get_in_degree(vertex) == 0:
+            vertices_queue.append(vertex)
+
+    while len(vertices_queue) != 0:
+        current_vertex = vertices_queue.pop(0)
+        sorted_vertices.append(current_vertex)
+
+        for out_vertex in graph_to_sort.dict_out[current_vertex]:
+            degree[out_vertex] -= 1
+
+            if degree[out_vertex] == 0:
+                vertices_queue.append(out_vertex)
+
+    if len(sorted_vertices) != graph_to_sort.get_number_of_vertices():
+        sorted_vertices = None
+
+    return sorted_vertices

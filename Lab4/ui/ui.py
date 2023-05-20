@@ -1,4 +1,3 @@
-from domain.undirected_graph import *
 from domain.directed_graph import *
 
 
@@ -19,19 +18,25 @@ class UI:
               'Enter 8 to remove a vertex.\n'
               'Enter 9 to add an edge.\n'
               'Enter 10 to remove an edge.\n'
-              'Enter 11 to read a undirected graph from a file - function 1.\n'
-              'Enter 12 to read a undirected graph from a file - function 2.\n'
-              'Enter 13 to read a directed graph from a file - function 1.\n'
-              'Enter 14 to read a directed graph from a file - function 2.\n'
-              'Enter 15 to save the graph to a file.\n'
-              'Enter 16 to create a random graph.\n'
-              'Enter 17 to print connected components.\n'
-              'Enter 18 to print strongly connected components.\n'
+              'Enter 11 to get the cost of an edge.\n'
+              'Enter 12 to read a graph from a file - function 1.\n'
+              'Enter 13 to read a graph from a file - function 2.\n'
+              'Enter 14 to save the graph to a file.\n'
+              'Enter 15 to create a random graph.\n'
+              'Enter 16 to get the lowest cost walk between two vertices.\n'
+              'Enter 17 to find the number of distinct walks of minimum cost between the given vertices.\n'
+              'Enter 18 to print the earliest and latest starting time for activities.\n'
               'Enter 19 to exit.\n')
 
 
     def main_menu(self):
-        graph = read_undirected_graph_from_file_1('graph.txt')
+        try:
+            graph = read_graph_from_file_1('graph.txt')
+        except FileNotFoundError:
+            graph = DirectedGraph()
+        except ValueError as ve:
+            print(str(ve))
+
         while True:
             self.print_menu()
 
@@ -200,51 +205,53 @@ class UI:
 
 
             elif option == '11':
-                filename = input('Enter file name: ')
+                print('Enter edge: ')
+                first_node = input('First node: ')
+                second_node = input('Second node: ')
 
                 try:
-                    graph = read_undirected_graph_from_file_1(filename)
-                    print('Graph read successfully.')
-                except IOError:
-                    print('File not found.')
+                    first_node = int(first_node)
+                    second_node = int(second_node)
+                except ValueError:
+                    print('Nodes must be integers.')
+                    continue
+
+                try:
+                    print(f'The cost of the edge is: {graph.get_cost_of_edge((first_node, second_node))}')
+                except ValueError as ve:
+                    print(str(ve))
+                    continue
+
 
             elif option == '12':
                 filename = input('Enter file name: ')
 
                 try:
-                    graph = read_undirected_graph_from_file_2(filename)
+                    graph = read_graph_from_file_1(filename)
                     print('Graph read successfully.')
                 except IOError:
                     print('File not found.')
+                except ValueError as ve:
+                    print(str(ve))
 
             elif option == '13':
                 filename = input('Enter file name: ')
 
                 try:
-                    graph = read_directed_graph_from_file_1(filename)
+                    graph = read_graph_from_file_2(filename)
                     print('Graph read successfully.')
                 except IOError:
                     print('File not found.')
+                except ValueError as ve:
+                    print(str(ve))
 
             elif option == '14':
                 filename = input('Enter file name: ')
 
-                try:
-                    graph = read_undirected_graph_from_file_2(filename)
-                    print('Graph read successfully.')
-                except IOError:
-                    print('File not found.')
-
-            elif option == '15':
-                filename = input('Enter file name: ')
-
-                if isinstance(graph, DirectedGraph):
-                    write_directed_graph_to_file(filename, graph)
-                else:
-                    write_undirected_graph_to_file(filename, graph)
+                write_graph_to_file(filename, graph)
                 print('Graph written successfully.')
 
-            elif option == '16':
+            elif option == '15':
                 number_of_vertices = input('Enter number of vertices: ')
                 number_of_edges = input('Enter number of edges: ')
 
@@ -256,43 +263,78 @@ class UI:
                     continue
 
                 try:
-                    graph = generate_random_undirected_graph(number_of_vertices, number_of_edges)
+                    graph = generate_random_graph(number_of_vertices, number_of_edges)
+                except ValueError as ve:
+                    print(str(ve))
+                    continue
+
+            elif option == '16':
+                first_node = input('Start node: ')
+                second_node = input('End node: ')
+
+                try:
+                    first_node = int(first_node)
+                    second_node = int(second_node)
+                except ValueError:
+                    print('Nodes must be integers.')
+                    continue
+
+                try:
+                    cost = graph.get_path_cost(first_node, second_node)
+
+                    if cost == infinity:
+                        print('There is no path between the two nodes.')
+                        continue
+
+                    print(f'The lowest cost path is: {graph.get_path(first_node, second_node)}')
+                    print(f'The cost of the path is: {graph.get_path_cost(first_node, second_node)}')
                 except ValueError as ve:
                     print(str(ve))
                     continue
 
             elif option == '17':
-                connected_components = get_connected_components(graph)
+                first_node = input('Start node: ')
+                second_node = input('End node: ')
 
-                if len(connected_components) == 0:
-                    print('There are no connected components.')
+                try:
+                    first_node = int(first_node)
+                    second_node = int(second_node)
+                except ValueError:
+                    print('Nodes must be integers.')
                     continue
 
-                elif len(connected_components) == 1:
-                    print('There is only one connected component: ')
+                try:
+                    distinct_paths = graph.min_cost_walks(first_node, second_node)
+                    print(f'The number of distinct paths between {first_node} and {second_node} is: {distinct_paths}')
 
-                else:
-                    print(f'There are {len(connected_components)} connected components: ')
-
-                for component in connected_components:
-                    print(component.dict_in)
-                    # print(component.dict_out)
+                except ValueError as ve:
+                    print(str(ve))
+                    continue
 
             elif option == '18':
-                connected_components = get_strongly_connected_components(graph)
+                filename = input("Enter the path to file containing the activities: ")
+                graph = read_activities(filename)
+                print('Activities read successfully.')
 
-                if len(connected_components) == 0:
-                    print('There are no strongly connected components.')
+                try:
+                    print('The graph is: ')
+                    write_graph_to_screen(graph)
+
+                    graph.compute_activities_times()
+
+                    for vertex in range(1, graph.get_number_of_vertices() - 1):
+                        print(f'activity: {vertex}, earliest time: {graph.earliest_start_time[vertex]}, latest time: {graph.latest_start_time[vertex]}')
+
+                    print('Critical activities are:')
+                    for vertex in range(1, graph.get_number_of_vertices()):
+                        if graph.earliest_start_time[vertex] == graph.latest_start_time[vertex]:
+                            print(f'activity: {vertex}')
+
+                    print(f'Minimum time of execution is: {graph.earliest_start_time[graph.get_number_of_vertices() - 1]}')
+
+                except ValueError as ve:
+                    print(str(ve))
                     continue
-
-                elif len(connected_components) == 1:
-                    print('There is only one strongly connected component: ')
-
-                else:
-                    print(f'There are {len(connected_components)} strongly connected components: ')
-
-                for component in connected_components:
-                    print(component)
 
             elif option == '19':
                 break

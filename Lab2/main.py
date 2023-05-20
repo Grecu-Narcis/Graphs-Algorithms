@@ -10,4 +10,6 @@ def main():
         print(component)
 
 
-main()
+ui = UI()
+ui.main_menu()
+#main()

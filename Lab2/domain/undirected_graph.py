@@ -210,7 +210,7 @@ def get_connected_components(graph):
     graph_components = []
 
     for component in connected_components.values():
-        print(component)
+        # print(component)
         graph_components.append(make_undirected_graph_from_vertex_list(graph, component))
 
     return graph_components
